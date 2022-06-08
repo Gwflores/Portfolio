@@ -1,0 +1,96 @@
+---
+title: "Track Trends"
+author: "Garrett Flores"
+date: '2022-06-07'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Introduction
+
+##### Track and Field has been experiencing some of the fastest recorded performances ever in the past couple years. This has been documents by the frequency or world and national records being set in various diciplines. It has widely been observed that track and field times have gradually gotten faster since times started being tracked over 100 years ago.
+
+##### Is the same trend being observed at the olympics? Olympic races tend to be significantly slower than the current world record because of race tactics. This is expecially true for distance races 1500m-Marathon.
+
+##### As a comparison, I looked at Mens 100m and 10000m times. In the 10000m distance, you expect race tactics to have a significant factor on the time outcome. However, in a 100m race, athletes go 100% from start to end with minimal focus on tactics.
+
+##### The purpose of this analysis is to find out if olympic or tactical races are also getting faster as the years go by.
+
+## Loading the Packages
+
+```{r}
+    library(tidyverse)
+    library(janitor)
+    library(lubridate)
+    library(gapminder)
+    library(ggpubr)
+    library(dplyr)
+```
+
+## Loading the Data
+
+```{r}
+results <- read.csv('results.csv')
+
+    head(results)
+```
+
+##### We have track and field data from the Olympics going back over 100 years ago. Here we look and race time trends to see if their is any differences in finish times.
+
+## Data Cleaning
+
+```{r}
+    results_mod <- results %>% 
+      filter(Event == '10000M Men') %>% 
+      arrange(Year) %>% 
+      mutate(Seconds = period_to_seconds(ms(Result))) %>%
+      mutate(Pace = 10000 / Seconds ) %>% 
+      clean_names()
+    results_mod
+```
+
+##### I first wanted to look at trends at the 10000m distance. First I filtered the data so that it would only see events equal to 10000m Men. To start off I wanted to arrange by year. I noticed that the Result column was in a date time format and was unable to graph properly. I decided to instead graph by pace. I did this by converting the date time values to seconds and then divided the distance by seconds to fill an additional column called Pace. Lastly, I reformated all the column names to so that they were lower case.
+
+```{r}
+results_mod_sprint <- results %>% 
+  arrange(Result) %>% 
+  filter(Event == '100M Men') %>% 
+  slice(1:80) %>% 
+  mutate(Result = as.numeric(Result)) %>% 
+  clean_names()
+results_mod_sprint
+
+```
+
+##### A second dataset was needed to analysis trends from the 100m distance. Like with the previous data cleaning, I arranged and filtered the data so that it was organized by result and filtered by 100m Men. I then removed two rows that had 'none' as a value. Upon further investigation, the values in the Result column were character data types. I used the mutate function and as.numeric function to convert this column to a numeric data type. Lastly, I reformated the column names so that they were lower case.
+
+## Visualization
+
+```{r, echo=FALSE}
+medal_pace <- ggplot(data = results_mod) + 
+  geom_point(mapping = aes(x = year, y = pace, color=medal)) +
+  facet_wrap(~medal) + 
+  labs(title = '10000M: Pace Changes Over The Years')
+plot(medal_pace)
+
+```
+
+##### Above shows a multiple scatter plots showing 10000m paces by medal over the years. You can clearly see a postive relationship between pace and year for all three medals.
+
+```{r, echo = FALSE}
+sprint_speed <- ggplot(data= results_mod_sprint) +
+  geom_point(mapping = aes(x = year, y = result, color = medal)) +
+  facet_wrap(~medal) +
+  labs(title= '100m: Medal Times Over The Years')
+plot(sprint_speed)
+
+```
+
+##### Above shows multiple scatter plots showing 100m times over the years. You can clearly see a negative correlation between finish time and year for all three medals.
+
+## Conclusion
+
+##### Based on the data provided, times during the olympics have indeed gotten faster in the 10000m and 100m distances, despite the use of race tactics in the 10000m.
